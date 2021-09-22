@@ -1,44 +1,64 @@
 version: '3'
 
 services:
-  mysql:
-    image: mysql:5.7.18
-    environment:
-      MYSQL_ROOT_PASSWORD: 'very-secret-assignment-password'
-      MYSQL_ROOT_HOST: '%'
-    volumes:
-      - mysqldata:/var/lib/mysql
-    ports:
-      - 3306:3306
+    mysql:
+        image: mysql:5.7.18
+        container_name: lokalise-database
+        environment:
+            MYSQL_DATABASE: 'lokalise'
+            MYSQL_USER: 'root'
+            MYSQL_ROOT_PASSWORD: 'very-secret-assignment-password'
+            MYSQL_ROOT_HOST: '%'
+        volumes:
+            - mysqldata:/var/lib/mysql
+        ports:
+            - 3306:3306
+        networks:
+            - development-network
 
-  php:
-    build:
-      context: .
-      dockerfile: php.Dockerfile
-    volumes:
-      - ./app:/var/www/html/app:cached
-    depends_on:
-      - mysql
+    php:
+        build:
+            context: .
+            dockerfile: php.Dockerfile
+        container_name: lokalise-php
+        environment:
+            APP_ENV: dev
+            DATABASE_URL: mysql://root:very-secret-assignment-password@mysql:3306/lokalise?serverVersion=5.7
+        volumes:
+            - ./app:/var/www/html/app
+        depends_on:
+            - mysql
+        networks:
+            - development-network
 
-  nginx:
-    image: nginx:latest
-    ports:
-      - 80:80
-    volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/nginx.conf
-      - ./app:/var/www/html/app:cached
-    depends_on:
-      - php
+    nginx:
+        image: nginx:latest
+        container_name: lokalise-nginx
+        ports:
+            - 80:80
+        volumes:
+            - ./nginx.conf:/etc/nginx/conf.d/nginx.conf
+            - ./app:/var/www/html/app
+        depends_on:
+            - php
+        networks:
+            - development-network
 
-  phpmyadmin:
-    image: phpmyadmin
-    restart: always
-    ports:
-      - 8080:80
-    depends_on:
-      - mysql
-    environment:
-      - PMA_ARBITRARY=1
+    phpmyadmin:
+        image: phpmyadmin
+        restart: always
+        ports:
+            - 8080:80
+        depends_on:
+            - mysql
+        environment:
+            - PMA_ARBITRARY=1
+        networks:
+            - development-network
 
 volumes:
-  mysqldata: {}
+    mysqldata:
+
+networks:
+    development-network:
+        driver: bridge
