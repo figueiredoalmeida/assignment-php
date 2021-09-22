@@ -4,13 +4,15 @@ services:
     mysql:
         image: mysql:5.7.18
         container_name: lokalise-database
+        env_file:
+            - ./.env
         environment:
-            MYSQL_DATABASE: 'lokalise'
-            MYSQL_USER: 'root'
-            MYSQL_ROOT_PASSWORD: 'very-secret-assignment-password'
-            MYSQL_ROOT_HOST: '%'
+            - MYSQL_DATABASE=$MYSQL_DATABASE
+            - MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+            - MYSQL_USER=$MYSQL_USER
         volumes:
             - mysqldata:/var/lib/mysql
+            - ./lokalise.sql:/docker-entrypoint-initdb.d/lokalise.sql
         ports:
             - 3306:3306
         networks:
@@ -21,9 +23,6 @@ services:
             context: .
             dockerfile: php.Dockerfile
         container_name: lokalise-php
-        environment:
-            APP_ENV: dev
-            DATABASE_URL: mysql://root:very-secret-assignment-password@mysql:3306/lokalise?serverVersion=5.7
         volumes:
             - ./app:/var/www/html/app
         depends_on:
@@ -46,6 +45,7 @@ services:
 
     phpmyadmin:
         image: phpmyadmin
+        container_name: lokalise-phpmyadmin
         restart: always
         ports:
             - 8080:80
