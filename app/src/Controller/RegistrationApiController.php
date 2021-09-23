@@ -20,29 +20,21 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
  *
  * @package App\Controller
  */
-class RegistrationApiController extends AbstractController
+class RegistrationApiController extends BaseApiController
 {
     const REGISTRATION_CREATE_FOUND_MESSAGE = 'Username %s already exists';
     const REGISTRATION_CREATE_SUCCESS_MESSAGE = 'Username %s successfully created';
 
     /**
-     * @var LoggerInterface
+     * TranslationApiController constructor.
+     * @param LoggerInterface $logger
+     * @param EntityManagerInterface $entityManager
+     * @param UserRepository $repository
      */
-    private LoggerInterface $logger;
-
-    /**
-     * @var EntityManagerInterface
-     */
-    private EntityManagerInterface $entityManager;
-    /**
-     * @var EntityManagerInterface
-     */
-    private EntityManagerInterface $em;
-
-    public function __construct(LoggerInterface $logger, EntityManagerInterface $entityManager)
+    public function __construct(LoggerInterface $logger, EntityManagerInterface $entityManager, UserRepository $repository)
     {
-        $this->logger = $logger;
-        $this->em = $entityManager;
+        parent::__construct($logger, $entityManager, $repository);
+        $this->repository = $repository;
     }
 
     /**
@@ -57,11 +49,10 @@ class RegistrationApiController extends AbstractController
      * @OA\Response(response="201", description="Registration")
      *
      * @param Request $request
-     * @param UserRepository $userRepository
      * @param UserPasswordEncoderInterface $encoder
      * @return JsonResponse
      */
-    public function createAction(Request $request, UserRepository $userRepository, UserPasswordEncoderInterface $encoder)
+    public function createAction(Request $request, UserPasswordEncoderInterface $encoder)
     {
         $data = json_decode($request->getContent(),true);
 
@@ -69,7 +60,7 @@ class RegistrationApiController extends AbstractController
         $password = isset($data['password']) ? $data['password'] : null;
 
         try {
-            $user = $userRepository->findOneBy(['userName' => $username]);
+            $user = $this->repository->findOneBy(['userName' => $username]);
 
             if (!is_null($user)) {
                 return new JsonResponse([

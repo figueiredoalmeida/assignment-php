@@ -34,6 +34,7 @@ class TranslationApiController extends BaseApiController
      * @var LanguageRepository
      */
     private LanguageRepository $languageRepository;
+
     /**
      * @var TranslationFactory
      */
@@ -121,51 +122,8 @@ class TranslationApiController extends BaseApiController
      */
     public function create(string $keyReference, Request $request): Response
     {
-        if (!$this->tokenPermission($request)) {
-            return new JsonResponse(self::ERROR_PERMISSION_MESSAGE, Response::HTTP_CONFLICT);
-        }
+        return $this->handleAction($keyReference, $request, 'create');
 
-        $data = json_decode($request->getContent(),true);
-
-        try {
-            // Checking if the given key does exist
-            $keyReference = $this->keyReferenceRepository->findOneBy(['name' => $keyReference]);
-            if (is_null($keyReference)) {
-                return new JsonResponse(['message' => KeyApiController::KEY_NOT_FOUND_MESSAGE], Response::HTTP_NOT_FOUND);
-            }
-
-            $translations = $data['translations'];
-            $httpResponse = Response::HTTP_NOT_FOUND;
-            foreach ($translations as $key => $value) {
-
-                // Checking if the language is a valid one
-                $language = $this->languageRepository->findOneBy(['isoCode' => $key]);
-
-                if (is_null($language)) {
-                    continue;
-                }
-
-                $translationRepo = $this->repository->findOneBy([
-                    'language' => $language,
-                    'keyReference' => $keyReference
-                ]);
-
-                if (is_null($translationRepo)) {
-                    $httpResponse = Response::HTTP_CREATED;
-
-                    $newTranslation = $this->translationFactory->create($language, $keyReference, $value);
-                    $this->em->persist($newTranslation);
-                }
-            }
-
-            $this->em->flush();
-
-            return new Response("", $httpResponse);
-
-        } catch (Exception $exception) {
-            $this->logger->critical('An error occurred: '.$exception->getMessage());
-            return new JsonResponse(['message' => self::ERROR_EXCEPTION_MESSAGE], Response::HTTP_CONFLICT);
-        }
     }
 
     /**
@@ -191,6 +149,20 @@ class TranslationApiController extends BaseApiController
      */
     public function update(string $keyReference, Request $request): Response
     {
+
+        return $this->handleAction($keyReference, $request, 'update');
+    }
+
+
+    /**
+     * @param string $keyReference
+     * @param Request $request
+     * @param string $action
+     * @return Response
+     * @throws Exception
+     */
+    public function handleAction(string $keyReference, Request $request, string $action): Response
+    {
         if (!$this->tokenPermission($request)) {
             return new JsonResponse(self::ERROR_PERMISSION_MESSAGE, Response::HTTP_CONFLICT);
         }
@@ -201,7 +173,7 @@ class TranslationApiController extends BaseApiController
             // Checking if the given key does exist
             $keyReference = $this->keyReferenceRepository->findOneBy(['name' => $keyReference]);
             if (is_null($keyReference)) {
-                return new JsonResponse(['message' => KeyApiController::KEY_NOT_FOUND_MESSAGE],Response::HTTP_NOT_FOUND);
+                return new JsonResponse(['message' => KeyApiController::KEY_NOT_FOUND_MESSAGE], Response::HTTP_NOT_FOUND);
             }
 
             $translations = $data['translations'];
@@ -221,17 +193,28 @@ class TranslationApiController extends BaseApiController
                     'keyReference' => $keyReference
                 ]);
 
-                if (!is_null($translation)) {
-                    $httpResponse = Response::HTTP_OK;
+                if ($action === 'create') {
+                    if (is_null($translation)) {
+                        $httpResponse = Response::HTTP_CREATED;
 
-                    $newTranslation = $this->translationFactory->create($language, $keyReference, $value);
-
-                    $translation
-                        ->setLanguage($newTranslation->getLanguage())
-                        ->setKeyReference($newTranslation->getKeyReference())
-                        ->setValue($newTranslation->getValue())
-                    ;
+                        $newTranslation = $this->translationFactory->create($language, $keyReference, $value);
+                        $this->em->persist($newTranslation);
+                    }
                 }
+                else {
+                    if (!is_null($translation)) {
+                        $httpResponse = Response::HTTP_OK;
+
+                        $newTranslation = $this->translationFactory->create($language, $keyReference, $value);
+
+                        $translation
+                            ->setLanguage($newTranslation->getLanguage())
+                            ->setKeyReference($newTranslation->getKeyReference())
+                            ->setValue($newTranslation->getValue())
+                        ;
+                    }
+                }
+
             }
 
             $this->em->flush();

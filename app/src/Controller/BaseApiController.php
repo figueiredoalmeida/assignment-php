@@ -151,7 +151,6 @@ abstract class BaseApiController extends AbstractController
         if ( true === $token instanceof Token ) {
             // Updating the last time the token was used
             $token->setLastUsed(new \DateTime());
-//            $this->em->persist($token);
             $this->em->flush();
         }
 
