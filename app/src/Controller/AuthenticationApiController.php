@@ -5,7 +5,10 @@ namespace App\Controller;
 use App\Entity\Token;
 use App\Entity\User;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ObjectRepository;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,12 +24,35 @@ use OpenApi\Annotations as OA;
  *
  * @Route("/api")
  */
-class AuthenticationApiController extends BaseApiController
+class AuthenticationApiController
 {
+    const PERMISSION_READ = 'read';
+    const PERMISSION_WRITE = 'write';
+    const ERROR_VALIDATION_MESSAGE = 'Missing keys or value is empty, please read the documentation';
 
     const AUTHENTICATION_LOGIN_ACCESS_ERROR_MESSAGE = 'Access value is not valid: use read or write';
     const AUTHENTICATION_LOGIN_USER_NOTFOUND_MESSAGE = 'User %s not found';
     const AUTHENTICATION_LOGIN_PASSWORD_ERROR_MESSAGE = 'Password is not valid';
+
+    /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private EntityManagerInterface $entityManager;
+    /**
+     * @var EntityManagerInterface
+     */
+    private EntityManagerInterface $em;
+
+    public function __construct(LoggerInterface $logger, EntityManagerInterface $entityManager)
+    {
+        $this->logger = $logger;
+        $this->em = $entityManager;
+    }
 
     /**
      * Login via token authentication

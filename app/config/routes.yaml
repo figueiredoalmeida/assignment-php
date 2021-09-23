@@ -2,17 +2,38 @@
 #    path: /
 #    controller: App\Controller\DefaultController::index
 
-registration:
-    path: /registration
-    controller: App\Controller\RegistrationController::create
-    methods: POST
 
+# Languages
+language_list:
+    path: /api/languages
+    controller: App\Controller\LanguageApiController::list
+    methods: GET
+
+language_remove:
+    path: /api/languages/{name}
+    controller: App\Controller\LanguageApiController::remove
+    methods: DELETE
+
+# Keys
+key_list:
+    path: /api/keys
+    controller: App\Controller\KeyApiController::list
+    methods: GET
+
+# As I had already created an abstract class for this purpose and key has the same field name
+# it makes easier to remove the key without duplicating the code
+key_remove:
+    path: /api/keys/{name}
+    controller: App\Controller\KeyApiController::remove
+    methods: DELETE
+
+
+# Swagger
 app.swagger_ui:
     path: /document
     methods: GET
     defaults: { _controller: nelmio_api_doc.controller.swagger_ui }
 
-# config/routes.yaml
 app.swagger:
     path: /document.json
     methods: GET

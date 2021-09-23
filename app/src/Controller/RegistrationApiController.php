@@ -4,6 +4,9 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,10 +20,30 @@ use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
  *
  * @package App\Controller
  */
-class RegistrationApiController extends BaseApiController
+class RegistrationApiController extends AbstractController
 {
     const REGISTRATION_CREATE_FOUND_MESSAGE = 'Username %s already exists';
     const REGISTRATION_CREATE_SUCCESS_MESSAGE = 'Username %s successfully created';
+
+    /**
+     * @var LoggerInterface
+     */
+    private LoggerInterface $logger;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private EntityManagerInterface $entityManager;
+    /**
+     * @var EntityManagerInterface
+     */
+    private EntityManagerInterface $em;
+
+    public function __construct(LoggerInterface $logger, EntityManagerInterface $entityManager)
+    {
+        $this->logger = $logger;
+        $this->em = $entityManager;
+    }
 
     /**
      * Creating a new user to generate a JWT token
@@ -68,7 +91,6 @@ class RegistrationApiController extends BaseApiController
             );
 
         } catch (\Exception $exception) {
-            dd($exception->getMessage());
             $this->logger->critical('An error occurred: '.$username.' - '.$exception->getMessage());
             return new JsonResponse(['message' => self::ERROR_EXCEPTION_MESSAGE], Response::HTTP_CONFLICT);
         }

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Language;
 use App\Repository\LanguageRepository;
+use App\Repository\repository;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Nelmio\ApiDocBundle\Annotation\Security;
@@ -16,53 +17,23 @@ use OpenApi\Annotations as OA;
 
 /**
  * Class LanguageApiController
+ * - If fields would be the same, I could pass via contruct the EntityFactoryInterface method
+ * - but it is not the case
  *
  * @package App\Controller
  * @Route("/api")
  */
 class LanguageApiController extends BaseApiController
 {
-    const LANGUAGE_LIST_NOTFOUND_MESSAGE = 'There are no languages registered. Please, read documentation to create a new one.';
     const LANGUAGE_CREATE_SUCCESS_MESSAGE = 'Languages created with success';
-
-    /**
-     * @var LanguageRepository
-     */
-    private LanguageRepository $languageRepository;
 
     public function __construct(LoggerInterface $logger,
                                 EntityManagerInterface $entityManager,
-                                LanguageRepository $languageRepository)
+                                LanguageRepository $repository)
     {
-        parent::__construct($logger, $entityManager);
-        $this->languageRepository = $languageRepository;
+        parent::__construct($logger, $entityManager, $repository);
     }
 
-    /**
-     * Listing all the languages
-     *
-     * @return JsonResponse
-     * @Route("/languages", name="api.language.list", methods={"GET"})
-     */
-    public function list(): Response
-    {
-        try {
-            $languageList = $this->languageRepository->findAll();
-
-            if (count($languageList) === 0) {
-                return new Response("", Response::HTTP_NO_CONTENT);
-            }
-
-            return new JsonResponse([
-                'total' => count($languageList),
-                'keys' => $languageList,
-            ], Response::HTTP_OK);
-
-        } catch (Exception $exception) {
-            $this->logger->critical('An error occurred: '.$exception->getMessage());
-            return new JsonResponse(['message' => self::ERROR_EXCEPTION_MESSAGE], Response::HTTP_CONFLICT);
-        }
-    }
 
     /**
      * Creating language(s)
@@ -97,7 +68,7 @@ class LanguageApiController extends BaseApiController
         try {
             foreach ($languages as $value) {
 
-                $languageRepo = $this->languageRepository->findBy([
+                $languageRepo = $this->repository->findBy([
                    'isoCode' => $value['isoCode'],
                    'name' => $value['name'],
                    'ltr' => $value['leftToRight'],

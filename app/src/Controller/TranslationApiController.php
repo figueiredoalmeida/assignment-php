@@ -29,10 +29,7 @@ class TranslationApiController extends BaseApiController
      * @var KeyReferenceRepository
      */
     private KeyReferenceRepository $keyReferenceRepository;
-    /**
-     * @var TranslationRepository
-     */
-    private TranslationRepository $translationRepository;
+
     /**
      * @var LanguageRepository
      */
@@ -48,19 +45,18 @@ class TranslationApiController extends BaseApiController
      * @param EntityManagerInterface $entityManager
      * @param LanguageRepository $languageRepository
      * @param KeyReferenceRepository $keyReferenceRepository
-     * @param TranslationRepository $translationRepository
+     * @param TranslationRepository $repository
      * @param TranslationFactory $translationFactory
      */
     public function __construct(LoggerInterface $logger,
                                 EntityManagerInterface $entityManager,
+                                TranslationRepository $repository,
                                 LanguageRepository $languageRepository,
                                 KeyReferenceRepository $keyReferenceRepository,
-                                TranslationRepository $translationRepository,
                                 TranslationFactory $translationFactory)
     {
-        parent::__construct($logger, $entityManager);
+        parent::__construct($logger, $entityManager, $repository);
         $this->keyReferenceRepository = $keyReferenceRepository;
-        $this->translationRepository = $translationRepository;
         $this->languageRepository = $languageRepository;
         $this->translationFactory = $translationFactory;
     }
@@ -84,7 +80,7 @@ class TranslationApiController extends BaseApiController
             }
 
             // Checking if there is any translation for the given key
-            $translationList = $this->translationRepository->findBy(['keyReference' => $keyRepo]);
+            $translationList = $this->repository->findBy(['keyReference' => $keyRepo]);
 
             if (count($translationList) === 0) {
                 return new Response("", Response::HTTP_NO_CONTENT);
@@ -149,7 +145,7 @@ class TranslationApiController extends BaseApiController
                     continue;
                 }
 
-                $translationRepo = $this->translationRepository->findOneBy([
+                $translationRepo = $this->repository->findOneBy([
                     'language' => $language,
                     'keyReference' => $keyReference
                 ]);
@@ -220,7 +216,7 @@ class TranslationApiController extends BaseApiController
                     continue;
                 }
 
-                $translation = $this->translationRepository->findOneBy([
+                $translation = $this->repository->findOneBy([
                     'language' => $language,
                     'keyReference' => $keyReference
                 ]);

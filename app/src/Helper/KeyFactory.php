@@ -8,9 +8,9 @@ use App\Entity\KeyReference;
  * Class KeyFactory
  * @package App\Helper
  */
-class KeyFactory
+class KeyFactory implements EntityFactoryInterface
 {
-    public function create(string $json): KeyReference
+    public function createEntity(string $json): KeyReference
     {
         $data = json_decode($json);
 
